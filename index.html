@@ -394,9 +394,9 @@
     </p>
 
     <div class="actions">
-      <button class="main-btn" onclick="openFirst()">첫 링크 열기</button>
+      <button class="main-btn" onclick="openFirst()">첫 확보 열기</button>
       <button class="dark-btn" onclick="loadResult()">새로고침</button>
-      <button class="gray-btn" onclick="copyFirst()">첫 링크 복사</button>
+      <button class="gray-btn" onclick="copyFirst()">첫 확보 복사</button>
     </div>
 
     <div class="notice" id="updatedAt">최근 확인: -</div>
@@ -406,7 +406,7 @@
   <div id="sections"></div>
 
   <div class="footer">
-    auto-flat-v6<br>
+    auto-final-index-v9<br>
     GitHub Actions + Cloudflare Workers
   </div>
 </main>
@@ -539,10 +539,11 @@ function getCategories() {
 
 function renderInfo() {
   const updated = RESULT.updatedAt || "-";
-  const hitCount = hitProducts().length || 0;
+  const hits = hitProducts();
+  const totalGrade = hits.reduce((sum, item) => sum + Number(item.gradeCount || 0), 0);
 
   document.getElementById("updatedAt").textContent =
-    `최근 확인: ${updated} · 확보 상품 ${hitCount}개`;
+    `최근 확인: ${updated} · 확보 상품 ${hits.length}개 · 등급 ${totalGrade}종`;
 }
 
 function renderFilters() {
