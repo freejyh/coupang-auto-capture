@@ -1,6 +1,6 @@
 {
   "version": "auto-flat-v3",
-  "updatedAt": "2026-06-14 15:13:54",
+  "updatedAt": "2026-06-14 15:49:16",
   "items": [
     {
       "key": "iphone16pro_natural_128",
@@ -9,7 +9,7 @@
       "row": "내추럴 티타늄",
       "col": "128GB",
       "url": "https://www.coupang.com/vp/products/8404744954?itemId=24297362709&landingType=USED_DETAIL&vendorItemId=91327955887",
-      "checkedAt": "2026-06-14 15:13:27",
+      "checkedAt": "2026-06-14 15:48:48",
       "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8404744954?itemId=24297362709&landingType=USED_DETAIL&vendorItemId=91327955887",
       "gradeCount": 0,
@@ -22,8 +22,8 @@
       "row": "내추럴 티타늄",
       "col": "1TB",
       "url": "https://www.coupang.com/vp/products/8405277026?itemId=24299221466&landingType=USED_DETAIL&vendorItemId=91315212546",
-      "checkedAt": "2026-06-14 15:13:30",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:48:52",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8405277026?itemId=24299221466&landingType=USED_DETAIL&vendorItemId=91315212546",
       "gradeCount": 0,
       "statuses": []
@@ -35,8 +35,8 @@
       "row": "화이트 티타늄",
       "col": "128GB",
       "url": "https://www.coupang.com/vp/products/8405327147?itemId=24299416193&landingType=USED_DETAIL&vendorItemId=91334567177",
-      "checkedAt": "2026-06-14 15:13:33",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:48:55",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8405327147?itemId=24299416193&landingType=USED_DETAIL&vendorItemId=91334567177",
       "gradeCount": 0,
       "statuses": []
@@ -48,8 +48,8 @@
       "row": "화이트 티타늄",
       "col": "256GB",
       "url": "https://www.coupang.com/vp/products/8418203601?itemId=24345984684&landingType=USED_DETAIL&vendorItemId=91361438205",
-      "checkedAt": "2026-06-14 15:13:36",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:48:58",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8418203601?itemId=24345984684&landingType=USED_DETAIL&vendorItemId=91361438205",
       "gradeCount": 0,
       "statuses": []
@@ -61,8 +61,8 @@
       "row": "내추럴 티타늄",
       "col": "256GB",
       "url": "https://www.coupang.com/vp/products/8387981667?itemId=24244772597&landingType=USED_DETAIL&vendorItemId=91267814410",
-      "checkedAt": "2026-06-14 15:13:39",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:49:01",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8387981667?itemId=24244772597&landingType=USED_DETAIL&vendorItemId=91267814410",
       "gradeCount": 0,
       "statuses": []
@@ -74,8 +74,8 @@
       "row": "내추럴 티타늄",
       "col": "1TB",
       "url": "https://www.coupang.com/vp/products/8412508359?itemId=24324991173&landingType=USED_DETAIL&vendorItemId=91340692255",
-      "checkedAt": "2026-06-14 15:13:42",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:49:04",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8412508359?itemId=24324991173&landingType=USED_DETAIL&vendorItemId=91340692255",
       "gradeCount": 0,
       "statuses": []
@@ -87,8 +87,8 @@
       "row": "화이트 티타늄",
       "col": "1TB",
       "url": "https://www.coupang.com/vp/products/8424970710?itemId=24373315212&landingType=USED_DETAIL&vendorItemId=91401881115",
-      "checkedAt": "2026-06-14 15:13:45",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:49:07",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8424970710?itemId=24373315212&landingType=USED_DETAIL&vendorItemId=91401881115",
       "gradeCount": 0,
       "statuses": []
@@ -100,8 +100,8 @@
       "row": "iPad Pro 11 M4",
       "col": "256GB",
       "url": "https://www.coupang.com/vp/products/8182812424?itemId=23398444932&landingType=USED_DETAIL&vendorItemId=90425657073",
-      "checkedAt": "2026-06-14 15:13:48",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:49:10",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8182812424?itemId=23398444932&landingType=USED_DETAIL&vendorItemId=90425657073",
       "gradeCount": 0,
       "statuses": []
@@ -113,8 +113,8 @@
       "row": "iPad Pro 13 M4",
       "col": "256GB",
       "url": "https://www.coupang.com/vp/products/8184124674?itemId=23403495502&landingType=USED_DETAIL&vendorItemId=90430665574",
-      "checkedAt": "2026-06-14 15:13:51",
-      "status": "OK",
+      "checkedAt": "2026-06-14 15:49:13",
+      "status": "HTTP_403",
       "finalUrl": "https://www.coupang.com/vp/products/8184124674?itemId=23403495502&landingType=USED_DETAIL&vendorItemId=90430665574",
       "gradeCount": 0,
       "statuses": []
