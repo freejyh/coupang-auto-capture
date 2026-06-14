@@ -1,0 +1,114 @@
+{
+  "version": "auto-flat-v3",
+  "updatedAt": "",
+  "items": [
+    {
+      "key": "iphone16pro_natural_128",
+      "name": "iPhone 16 Pro 내추럴 128GB",
+      "section": "iphone16pro",
+      "row": "내추럴 티타늄",
+      "col": "128GB",
+      "url": "https://www.coupang.com/vp/products/8404744954?itemId=24297362709&landingType=USED_DETAIL&vendorItemId=91327955887",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16pro_natural_1tb",
+      "name": "iPhone 16 Pro 내추럴 1TB",
+      "section": "iphone16pro",
+      "row": "내추럴 티타늄",
+      "col": "1TB",
+      "url": "https://www.coupang.com/vp/products/8405277026?itemId=24299221466&landingType=USED_DETAIL&vendorItemId=91315212546",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16pro_white_128",
+      "name": "iPhone 16 Pro 화이트 128GB",
+      "section": "iphone16pro",
+      "row": "화이트 티타늄",
+      "col": "128GB",
+      "url": "https://www.coupang.com/vp/products/8405327147?itemId=24299416193&landingType=USED_DETAIL&vendorItemId=91334567177",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16pro_white_256",
+      "name": "iPhone 16 Pro 화이트 256GB",
+      "section": "iphone16pro",
+      "row": "화이트 티타늄",
+      "col": "256GB",
+      "url": "https://www.coupang.com/vp/products/8418203601?itemId=24345984684&landingType=USED_DETAIL&vendorItemId=91361438205",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16promax_natural_256",
+      "name": "iPhone 16 Pro Max 내추럴 256GB",
+      "section": "iphone16promax",
+      "row": "내추럴 티타늄",
+      "col": "256GB",
+      "url": "https://www.coupang.com/vp/products/8387981667?itemId=24244772597&landingType=USED_DETAIL&vendorItemId=91267814410",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16promax_natural_1tb",
+      "name": "iPhone 16 Pro Max 내추럴 1TB",
+      "section": "iphone16promax",
+      "row": "내추럴 티타늄",
+      "col": "1TB",
+      "url": "https://www.coupang.com/vp/products/8412508359?itemId=24324991173&landingType=USED_DETAIL&vendorItemId=91340692255",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "iphone16promax_white_1tb",
+      "name": "iPhone 16 Pro Max 화이트 1TB",
+      "section": "iphone16promax",
+      "row": "화이트 티타늄",
+      "col": "1TB",
+      "url": "https://www.coupang.com/vp/products/8424970710?itemId=24373315212&landingType=USED_DETAIL&vendorItemId=91401881115",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "ipadpro11m4_256",
+      "name": "iPad Pro 11 M4 256GB",
+      "section": "ipadpro",
+      "row": "iPad Pro 11 M4",
+      "col": "256GB",
+      "url": "https://www.coupang.com/vp/products/8182812424?itemId=23398444932&landingType=USED_DETAIL&vendorItemId=90425657073",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    },
+    {
+      "key": "ipadpro13m4_256",
+      "name": "iPad Pro 13 M4 256GB",
+      "section": "ipadpro",
+      "row": "iPad Pro 13 M4",
+      "col": "256GB",
+      "url": "https://www.coupang.com/vp/products/8184124674?itemId=23403495502&landingType=USED_DETAIL&vendorItemId=90430665574",
+      "gradeCount": 0,
+      "statuses": [],
+      "status": "INIT",
+      "checkedAt": ""
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "coupang-auto-capture-flat",
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "capture": "node scrape.mjs",
+    "build": "node build.mjs"
+  }
+}
