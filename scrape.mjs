@@ -2,7 +2,15 @@ import fs from "node:fs/promises";
 
 const PRODUCTS_PATH = "products.json";
 const RESULT_PATH = "result.json";
-const STATUS_ORDER = ["반품-최상", "반품-상", "반품-중상", "반품-중", "반품-중하", "반품-하"];
+
+const STATUS_ORDER = [
+  "반품-최상",
+  "반품-상",
+  "반품-중상",
+  "반품-중",
+  "반품-중하",
+  "반품-하"
+];
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -19,8 +27,11 @@ function nowKST() {
 }
 
 async function readJson(path, fallback) {
-  try { return JSON.parse(await fs.readFile(path, "utf8")); }
-  catch { return fallback; }
+  try {
+    return JSON.parse(await fs.readFile(path, "utf8"));
+  } catch {
+    return fallback;
+  }
 }
 
 function decodeHtml(value) {
@@ -57,9 +68,14 @@ function normalizeText(value) {
 function parseStatuses(html) {
   const text = normalizeText(htmlToText(html));
   const found = new Set();
+
   const re = /반품\s*[-–—·ㆍ•∙]?\s*(최상|중상|중하|상|중|하)(?!\s*품|고)/g;
   let match;
-  while ((match = re.exec(text)) !== null) found.add(`반품-${match[1]}`);
+
+  while ((match = re.exec(text)) !== null) {
+    found.add(`반품-${match[1]}`);
+  }
+
   return STATUS_ORDER.filter(status => found.has(status));
 }
 
@@ -77,7 +93,13 @@ async function fetchPage(url) {
   });
 
   const html = await res.text();
-  return { ok: res.ok, statusCode: res.status, finalUrl: res.url, html };
+
+  return {
+    ok: res.ok,
+    statusCode: res.status,
+    finalUrl: res.url,
+    html
+  };
 }
 
 function makeTelegramMessage(oldItems, newItems) {
@@ -86,37 +108,88 @@ function makeTelegramMessage(oldItems, newItems) {
 
   for (const item of newItems) {
     const old = oldMap.get(item.key) || { statuses: [] };
+
     const before = new Set(old.statuses || []);
     const after = new Set(item.statuses || []);
+
     const added = [...after].filter(status => !before.has(status));
     const removed = [...before].filter(status => !after.has(status));
 
-    if (added.length) lines.push(`✅ ${item.name}: ${added.join(" / ")} 추가`);
-    if (removed.length && before.size > 0) lines.push(`➖ ${item.name}: ${removed.join(" / ")} 사라짐`);
+    if (added.length) {
+      lines.push(`✅ ${item.name}: ${added.join(" / ")} 추가`);
+    }
+
+    if (removed.length && before.size > 0) {
+      lines.push(`➖ ${item.name}: ${removed.join(" / ")} 사라짐`);
+    }
   }
 
   if (!lines.length) return "";
 
-  return ["쿠팡 반품 자동확보", ...lines, "", `확인시간: ${nowKST()}`].join("\n");
+  return [
+    "쿠팡 반품 자동확보",
+    ...lines,
+    "",
+    `확인시간: ${nowKST()}`
+  ].join("\n");
+}
+
+function makeManualTestMessage(items) {
+  const hits = (items || []).filter(item => Number(item.gradeCount || 0) > 0);
+  const totalGrade = hits.reduce((sum, item) => sum + Number(item.gradeCount || 0), 0);
+
+  const lines = [
+    "쿠팡 반품 자동확보 테스트",
+    "변화 없음",
+    `확보 칸: ${hits.length}개`,
+    `등급 합계: ${totalGrade}종`,
+    `확인시간: ${nowKST()}`
+  ];
+
+  if (hits.length) {
+    lines.push("");
+    lines.push("현재 확보 상태");
+
+    for (const item of hits) {
+      lines.push(`• ${item.name}: ${(item.statuses || []).join(" / ")} (${item.gradeCount}종)`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 async function sendTelegram(text) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId || !text) return;
+
+  if (!token || !chatId || !text) {
+    console.log("Telegram skipped: missing token/chat_id or empty message");
+    return;
+  }
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true })
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: true
+    })
   });
 
-  if (!res.ok) console.log("Telegram failed", res.status, await res.text());
+  if (!res.ok) {
+    console.log("Telegram failed", res.status, await res.text());
+  } else {
+    console.log("Telegram sent");
+  }
 }
 
 async function main() {
   const products = await readJson(PRODUCTS_PATH, []);
   const oldResult = await readJson(RESULT_PATH, { items: [] });
+
   const items = [];
 
   for (const product of products) {
@@ -134,6 +207,7 @@ async function main() {
       });
 
       console.log(`${product.name}: ${statuses.length}종 ${statuses.join(", ") || "-"}`);
+
       await sleep(2800);
     } catch (error) {
       items.push({
@@ -144,13 +218,29 @@ async function main() {
         gradeCount: 0,
         statuses: []
       });
+
       console.log(`${product.name}: FETCH_ERROR`);
     }
   }
 
-  const result = { version: "auto-flat-v3", updatedAt: nowKST(), items };
-  await sendTelegram(makeTelegramMessage(oldResult.items, items));
+  const result = {
+    version: "auto-flat-v3",
+    updatedAt: nowKST(),
+    items
+  };
+
+  const telegramText = makeTelegramMessage(oldResult.items, items);
+
+  if (telegramText) {
+    await sendTelegram(telegramText);
+  } else if (process.env.GITHUB_EVENT_NAME === "workflow_dispatch") {
+    await sendTelegram(makeManualTestMessage(items));
+  } else {
+    console.log("No Telegram message: no changes");
+  }
+
   await fs.writeFile(RESULT_PATH, JSON.stringify(result, null, 2), "utf8");
+
   console.log(`Saved ${RESULT_PATH}`);
 }
 
