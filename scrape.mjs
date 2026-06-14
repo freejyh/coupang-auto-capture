@@ -35,8 +35,26 @@ async function readJson(path, fallback) {
   }
 }
 
-function decodeHtml(value) {
+function decodeUnicodeEscapes(value) {
   return String(value || "")
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
+      try {
+        return String.fromCharCode(parseInt(code, 16));
+      } catch {
+        return _;
+      }
+    })
+    .replace(/\\x([0-9a-fA-F]{2})/g, (_, code) => {
+      try {
+        return String.fromCharCode(parseInt(code, 16));
+      } catch {
+        return _;
+      }
+    });
+}
+
+function decodeHtml(value) {
+  return decodeUnicodeEscapes(String(value || ""))
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
@@ -58,7 +76,7 @@ function stripHtml(html) {
 }
 
 function normalizeText(value) {
-  return String(value || "")
+  return decodeHtml(value)
     .replace(/\s+/g, " ")
     .replace(/반품\s*[·ㆍ･•∙.\-–—]\s*/g, "반품-")
     .replace(/반품\s+(최상|중상|중하|상|중|하)/g, "반품-$1")
@@ -66,15 +84,16 @@ function normalizeText(value) {
     .trim();
 }
 
-function detectSoldOut(textLike) {
-  const text = normalizeText(decodeHtml(textLike));
+function detectSoldOutVisibleOnly(textLike) {
+  const text = normalizeText(textLike);
 
   const patterns = [
     /상품이\s*품절되었습니다/i,
     /품절되었습니다/i,
     /일시\s*품절/i,
     /일시품절/i,
-    /품절/i,
+    /현재\s*상품이\s*품절/i,
+    /현재\s*구매할\s*수\s*없는\s*상품/i,
     /구매할\s*수\s*없는\s*상품/i,
     /판매가\s*종료/i,
     /판매\s*종료/i,
@@ -82,23 +101,36 @@ function detectSoldOut(textLike) {
     /재입고\s*알림/i,
     /out\s*of\s*stock/i,
     /sold\s*out/i,
-    /soldout/i,
-    /SOLD_OUT/i,
-    /outOfStock/i
+    /soldout/i
   ];
 
   return patterns.some(pattern => pattern.test(text));
 }
 
 function parseStatuses(textLike) {
-  const text = normalizeText(decodeHtml(textLike));
+  const text = normalizeText(textLike);
   const found = new Set();
 
-  const re = /반품\s*[-–—·ㆍ•∙]?\s*(최상|중상|중하|상|중|하)(?!\s*품|고)/g;
-  let match;
+  const patterns = [
+    /반품\s*[-–—·ㆍ•∙]?\s*(최상|중상|중하|상|중|하)(?!\s*품|고)/g,
+    /"condition"\s*:\s*"(반품-[^"]+)"/g,
+    /"conditionName"\s*:\s*"(반품-[^"]+)"/g,
+    /"usedCondition"\s*:\s*"(반품-[^"]+)"/g
+  ];
 
-  while ((match = re.exec(text)) !== null) {
-    found.add(`반품-${match[1]}`);
+  for (const re of patterns) {
+    let match;
+
+    while ((match = re.exec(text)) !== null) {
+      const raw = match[1];
+
+      if (raw.includes("최상")) found.add("반품-최상");
+      else if (raw.includes("중상")) found.add("반품-중상");
+      else if (raw.includes("중하")) found.add("반품-중하");
+      else if (raw.includes("상")) found.add("반품-상");
+      else if (raw.includes("중")) found.add("반품-중");
+      else if (raw.includes("하")) found.add("반품-하");
+    }
   }
 
   return STATUS_ORDER.filter(status => found.has(status));
@@ -114,6 +146,12 @@ async function readWithBrowser(context, product) {
     });
 
     await page.waitForTimeout(6000);
+
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 2);
+    }).catch(() => {});
+
+    await page.waitForTimeout(1500);
 
     const visibleText = await page.locator("body").innerText({
       timeout: 10000
@@ -162,18 +200,18 @@ async function readWithFetch(product) {
 function buildItem(product, pageData) {
   const visibleText = pageData.visibleText || "";
   const htmlText = stripHtml(pageData.html || "");
-  const combined = `${visibleText} ${htmlText}`;
+  const combinedText = `${visibleText} ${htmlText}`;
 
-  const soldOut = detectSoldOut(combined);
+  const visibleSoldOut = detectSoldOutVisibleOnly(visibleText);
 
-  let statuses = [];
+  let statuses = parseStatuses(combinedText);
 
-  if (pageData.ok && !soldOut) {
-    statuses = parseStatuses(visibleText);
+  const soldOut =
+    visibleSoldOut ||
+    (!statuses.length && detectSoldOutVisibleOnly(htmlText));
 
-    if (!statuses.length && !visibleText.trim()) {
-      statuses = parseStatuses(htmlText);
-    }
+  if (soldOut) {
+    statuses = [];
   }
 
   return {
@@ -342,7 +380,7 @@ async function main() {
   }
 
   const result = {
-    version: "auto-final-v8",
+    version: "auto-final-v9",
     updatedAt: nowKST(),
     items
   };
