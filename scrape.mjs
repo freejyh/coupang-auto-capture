@@ -65,6 +65,33 @@ function normalizeText(value) {
     .trim();
 }
 
+function detectSoldOut(html) {
+  const raw = normalizeText(decodeHtml(html));
+  const text = normalizeText(htmlToText(html));
+
+  const combined = `${raw} ${text}`;
+
+  const strongSoldOutPatterns = [
+    /일시\s*품절/i,
+    /일시품절/i,
+    /품절되었습니다/i,
+    /현재\s*상품이\s*품절/i,
+    /현재\s*구매할\s*수\s*없는\s*상품/i,
+    /구매할\s*수\s*없는\s*상품/i,
+    /판매가\s*종료/i,
+    /판매\s*종료/i,
+    /판매\s*중지/i,
+    /재입고\s*알림/i,
+    /out\s*of\s*stock/i,
+    /sold\s*out/i,
+    /soldout/i,
+    /outOfStock/i,
+    /SOLD_OUT/i
+  ];
+
+  return strongSoldOutPatterns.some(pattern => pattern.test(combined));
+}
+
 function parseStatuses(html) {
   const text = normalizeText(htmlToText(html));
   const found = new Set();
@@ -122,6 +149,10 @@ function makeTelegramMessage(oldItems, newItems) {
     if (removed.length && before.size > 0) {
       lines.push(`➖ ${item.name}: ${removed.join(" / ")} 사라짐`);
     }
+
+    if (item.soldOut && before.size > 0) {
+      lines.push(`❌ ${item.name}: 품절 처리`);
+    }
   }
 
   if (!lines.length) return "";
@@ -136,13 +167,15 @@ function makeTelegramMessage(oldItems, newItems) {
 
 function makeManualTestMessage(items) {
   const hits = (items || []).filter(item => Number(item.gradeCount || 0) > 0);
+  const soldOuts = (items || []).filter(item => item.soldOut);
   const totalGrade = hits.reduce((sum, item) => sum + Number(item.gradeCount || 0), 0);
 
   const lines = [
     "쿠팡 반품 자동확보 테스트",
     "변화 없음",
-    `확보 칸: ${hits.length}개`,
+    `확보 상품: ${hits.length}개`,
     `등급 합계: ${totalGrade}종`,
+    `품절 감지: ${soldOuts.length}개`,
     `확인시간: ${nowKST()}`
   ];
 
@@ -195,18 +228,33 @@ async function main() {
   for (const product of products) {
     try {
       const page = await fetchPage(product.url);
-      const statuses = page.ok ? parseStatuses(page.html) : [];
+
+      let soldOut = false;
+      let statuses = [];
+
+      if (page.ok) {
+        soldOut = detectSoldOut(page.html);
+
+        if (soldOut) {
+          statuses = [];
+        } else {
+          statuses = parseStatuses(page.html);
+        }
+      }
 
       items.push({
         ...product,
         checkedAt: nowKST(),
-        status: page.ok ? "OK" : `HTTP_${page.statusCode}`,
+        status: page.ok ? (soldOut ? "SOLD_OUT" : "OK") : `HTTP_${page.statusCode}`,
+        soldOut,
         finalUrl: page.finalUrl,
         gradeCount: statuses.length,
         statuses
       });
 
-      console.log(`${product.name}: ${statuses.length}종 ${statuses.join(", ") || "-"}`);
+      console.log(
+        `${product.name}: ${soldOut ? "SOLD_OUT" : `${statuses.length}종 ${statuses.join(", ") || "-"}`}`
+      );
 
       await sleep(2800);
     } catch (error) {
@@ -214,6 +262,7 @@ async function main() {
         ...product,
         checkedAt: nowKST(),
         status: "FETCH_ERROR",
+        soldOut: false,
         error: String(error?.message || error),
         gradeCount: 0,
         statuses: []
@@ -224,7 +273,7 @@ async function main() {
   }
 
   const result = {
-    version: "auto-flat-v3",
+    version: "auto-flat-v6",
     updatedAt: nowKST(),
     items
   };
