@@ -4,76 +4,629 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>쿠팡 반품 판매 DB</title>
+
   <style>
-    :root{--bg:#f7f7f8;--card:#fff;--text:#171717;--line:#eeeeef;--orange:#ff5a00;--red:#d71920;--blue:#1677ff;--shadow:0 12px 28px rgba(0,0,0,.07)}
+    :root{
+      --bg:#f7f7f8;
+      --card:#fff;
+      --text:#171717;
+      --line:#eeeeef;
+      --orange:#ff5a00;
+      --red:#d71920;
+      --blue:#1677ff;
+      --shadow:0 12px 28px rgba(0,0,0,.07);
+    }
+
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display","Apple SD Gothic Neo","Pretendard","Noto Sans KR",Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
-    a,button{font-family:inherit}a{text-decoration:none;color:inherit}
-    .app{width:100%;max-width:430px;margin:0 auto;padding:12px 16px 36px}
-    .hero{position:relative;background:#fff;border-radius:0 0 28px 28px;padding:18px 14px 15px;margin:0 -2px 23px;box-shadow:var(--shadow)}
-    .top-row{display:flex;align-items:flex-start;gap:7px;padding-right:32px}.logo{width:40px;height:40px;flex:0 0 auto;object-fit:contain;margin-top:3px}
-    h1{margin:0;font-size:22px;line-height:1.08;letter-spacing:-1.05px;font-weight:740;white-space:nowrap}.version{position:absolute;right:18px;top:49px;color:#777;font-size:12px;font-weight:660}
-    .desc{margin:12px 3px 16px;color:#5f5f5f;font-size:12.5px;line-height:1.48;font-weight:460;letter-spacing:-.2px;word-break:keep-all}
-    .icon-actions{position:absolute;right:4px;top:8px;display:flex;flex-direction:column;gap:17px;align-items:center}.icon-actions button{width:34px;height:34px;border:0;background:transparent;color:var(--blue);font-size:23px;line-height:34px;font-weight:630;cursor:pointer;text-align:center}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{border:1px solid #dfdfe1;border-radius:19px;background:#fff;padding:11px 4px 9px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.025) inset}.stat .num{font-size:20.5px;line-height:1;font-weight:740;letter-spacing:-.7px}.stat .label{margin-top:8px;font-size:10.7px;color:#555;font-weight:620;letter-spacing:-.25px}
-    .actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}.main-btn,.dark-btn,.gray-btn{height:42px;border:0;border-radius:22px;color:#fff;font-size:12.9px;font-weight:650;cursor:pointer;letter-spacing:-.3px;display:flex;justify-content:center;align-items:center}.main-btn{background:var(--orange)}.dark-btn{background:#080808}.gray-btn{background:#3c3c3c}
-    .notice{margin:10px 2px 0;color:#777;font-size:11.1px;line-height:1.35;letter-spacing:-.2px;font-weight:440;word-break:keep-all}.filter{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 0 18px;padding:0 2px 2px}.filter::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;border:1px solid #e3e3e5;background:#fff;color:#333;height:33px;border-radius:999px;padding:0 12px;font-size:12.2px;font-weight:620;letter-spacing:-.25px;cursor:pointer}.chip.active{background:#111;color:#fff;border-color:#111}
-    .section{margin:0 0 25px}.section-title{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding-left:8px}.section-title .emoji{font-size:22px}.section-title h2{margin:0;font-size:20.3px;line-height:1.08;letter-spacing:-1px;font-weight:730}
-    .table-card{border:1px solid #e2e2e4;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 12px 28px rgba(0,0,0,.04)}.matrix{display:grid;width:100%;background:#fff}.cell{min-height:56px;padding:6px 2px;border-bottom:1px solid var(--line);display:flex;justify-content:center;align-items:center;text-align:center;overflow:hidden}.head{min-height:36px;background:#fff;font-size:12px;font-weight:690;letter-spacing:-.35px}.row-head{background:#fbfbfc;line-height:1.16;letter-spacing:-.45px;font-size:11.1px;font-weight:630;word-break:keep-all}.product-cell{flex-direction:column;gap:4px}.x{color:var(--red);font-size:22px;font-weight:700;line-height:1}.open-btn{display:inline-flex;justify-content:center;align-items:center;min-width:46px;height:28px;border-radius:999px;color:#fff;background:#000;font-size:11px;font-weight:650;padding:0 10px;letter-spacing:-.25px;border:0}.meta{display:block;font-size:10.2px;font-weight:630;letter-spacing:-.35px;white-space:nowrap}.meta.hot{color:var(--orange)}
-    .footer{margin-top:24px;text-align:center;color:#888;font-size:11px;line-height:1.5}.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#000;color:#fff;border-radius:999px;padding:11px 15px;font-size:12px;font-weight:630;opacity:0;pointer-events:none;transition:.22s;z-index:100;max-width:calc(100% - 36px);white-space:nowrap}.toast.show{opacity:1;bottom:42px}
-    @media(max-width:380px){.app{padding-left:12px;padding-right:12px}h1{font-size:20px}.section-title h2{font-size:18.8px}.head{font-size:10.8px}.row-head{font-size:10.1px}.open-btn{min-width:43px;height:27px;font-size:10.5px}.meta{font-size:9.8px}}
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display","Apple SD Gothic Neo","Pretendard","Noto Sans KR",Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:geometricPrecision;
+    }
+
+    a,button{font-family:inherit}
+    a{text-decoration:none;color:inherit}
+
+    .app{
+      width:100%;
+      max-width:430px;
+      margin:0 auto;
+      padding:12px 16px 36px;
+    }
+
+    .hero{
+      position:relative;
+      background:#fff;
+      border-radius:0 0 28px 28px;
+      padding:18px 14px 15px;
+      margin:0 -2px 23px;
+      box-shadow:var(--shadow);
+    }
+
+    .top-row{
+      display:flex;
+      align-items:flex-start;
+      gap:7px;
+      padding-right:32px;
+    }
+
+    .logo{
+      width:40px;
+      height:40px;
+      flex:0 0 auto;
+      object-fit:contain;
+      margin-top:3px;
+    }
+
+    h1{
+      margin:0;
+      font-size:22px;
+      line-height:1.08;
+      letter-spacing:-1.05px;
+      font-weight:740;
+      white-space:nowrap;
+    }
+
+    .version{
+      position:absolute;
+      right:18px;
+      top:49px;
+      color:#777;
+      font-size:12px;
+      font-weight:660;
+    }
+
+    .desc{
+      margin:12px 3px 13px;
+      color:#5f5f5f;
+      font-size:12.5px;
+      line-height:1.48;
+      font-weight:460;
+      letter-spacing:-.2px;
+      word-break:keep-all;
+    }
+
+    .icon-actions{
+      position:absolute;
+      right:4px;
+      top:8px;
+      display:flex;
+      flex-direction:column;
+      gap:17px;
+      align-items:center;
+    }
+
+    .icon-actions button{
+      width:34px;
+      height:34px;
+      border:0;
+      background:transparent;
+      color:var(--blue);
+      font-size:23px;
+      line-height:34px;
+      font-weight:630;
+      cursor:pointer;
+      text-align:center;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .main-btn,.dark-btn,.gray-btn{
+      height:42px;
+      border:0;
+      border-radius:22px;
+      color:#fff;
+      font-size:12.9px;
+      font-weight:650;
+      cursor:pointer;
+      letter-spacing:-.3px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .main-btn{background:var(--orange)}
+    .dark-btn{background:#080808}
+    .gray-btn{background:#3c3c3c}
+
+    .notice{
+      margin:10px 2px 0;
+      color:#777;
+      font-size:11.1px;
+      line-height:1.35;
+      letter-spacing:-.2px;
+      font-weight:440;
+      word-break:keep-all;
+    }
+
+    .filter{
+      display:flex;
+      gap:7px;
+      overflow-x:auto;
+      scrollbar-width:none;
+      margin:0 0 18px;
+      padding:0 2px 2px;
+    }
+
+    .filter::-webkit-scrollbar{display:none}
+
+    .chip{
+      flex:0 0 auto;
+      border:1px solid #e3e3e5;
+      background:#fff;
+      color:#333;
+      height:33px;
+      border-radius:999px;
+      padding:0 12px;
+      font-size:12.2px;
+      font-weight:620;
+      letter-spacing:-.25px;
+      cursor:pointer;
+    }
+
+    .chip.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+
+    .section{
+      margin:0 0 25px;
+    }
+
+    .section-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:0 0 12px;
+      padding-left:8px;
+    }
+
+    .section-title .emoji{
+      font-size:22px;
+    }
+
+    .section-title h2{
+      margin:0;
+      font-size:20.3px;
+      line-height:1.08;
+      letter-spacing:-1px;
+      font-weight:730;
+    }
+
+    .table-card{
+      border:1px solid #e2e2e4;
+      border-radius:22px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:0 12px 28px rgba(0,0,0,.04);
+    }
+
+    .matrix{
+      display:grid;
+      width:100%;
+      background:#fff;
+    }
+
+    .cell{
+      min-height:56px;
+      padding:6px 2px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      overflow:hidden;
+    }
+
+    .head{
+      min-height:36px;
+      background:#fff;
+      font-size:12px;
+      font-weight:690;
+      letter-spacing:-.35px;
+    }
+
+    .row-head{
+      background:#fbfbfc;
+      line-height:1.16;
+      letter-spacing:-.45px;
+      font-size:11.1px;
+      font-weight:630;
+      word-break:keep-all;
+    }
+
+    .product-cell{
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .x{
+      color:var(--red);
+      font-size:22px;
+      font-weight:700;
+      line-height:1;
+    }
+
+    .open-btn{
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      min-width:46px;
+      height:28px;
+      border-radius:999px;
+      color:#fff;
+      background:#000;
+      font-size:11px;
+      font-weight:650;
+      padding:0 10px;
+      letter-spacing:-.25px;
+      border:0;
+    }
+
+    .meta{
+      display:block;
+      font-size:10.2px;
+      font-weight:630;
+      letter-spacing:-.35px;
+      white-space:nowrap;
+    }
+
+    .meta.hot{
+      color:var(--orange);
+    }
+
+    .footer{
+      margin-top:24px;
+      text-align:center;
+      color:#888;
+      font-size:11px;
+      line-height:1.5;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:28px;
+      transform:translateX(-50%);
+      background:#000;
+      color:#fff;
+      border-radius:999px;
+      padding:11px 15px;
+      font-size:12px;
+      font-weight:630;
+      opacity:0;
+      pointer-events:none;
+      transition:.22s;
+      z-index:100;
+      max-width:calc(100% - 36px);
+      white-space:nowrap;
+    }
+
+    .toast.show{
+      opacity:1;
+      bottom:42px;
+    }
+
+    @media(max-width:380px){
+      .app{padding-left:12px;padding-right:12px}
+      h1{font-size:20px}
+      .section-title h2{font-size:18.8px}
+      .head{font-size:10.8px}
+      .row-head{font-size:10.1px}
+      .open-btn{min-width:43px;height:27px;font-size:10.5px}
+      .meta{font-size:9.8px}
+    }
   </style>
 </head>
+
 <body>
 <main class="app">
   <section class="hero">
-    <div class="icon-actions"><button onclick="openFirst()">↗</button><button onclick="sharePage()">⇧</button></div>
-    <div class="top-row"><img class="logo" src="https://image7.coupangcdn.com/image/coupang/common/logo_coupang_w350.png" alt="coupang" onerror="this.style.display='none'"><div><h1>쿠팡 반품 판매 DB</h1></div></div>
-    <div class="version">AUTO</div>
-    <p class="desc">30분마다 자동확보 결과를 읽습니다. 확보된 칸만 확보 등급 수를 표시합니다.</p>
-    <div class="stats">
-      <div class="stat"><div class="num" id="statSlot">0/0</div><div class="label">확보 칸</div></div>
-      <div class="stat"><div class="num" id="statGrade">0종</div><div class="label">등급 합계</div></div>
-      <div class="stat"><div class="num" id="statLink">0개</div><div class="label">열기 링크</div></div>
+    <div class="icon-actions">
+      <button onclick="openFirst()">↗</button>
+      <button onclick="sharePage()">⇧</button>
     </div>
-    <div class="actions"><button class="main-btn" onclick="openFirst()">첫 링크 열기</button><button class="dark-btn" onclick="loadResult()">새로고침</button><button class="gray-btn" onclick="copyFirst()">첫 링크 복사</button></div>
+
+    <div class="top-row">
+      <img class="logo" src="https://image7.coupangcdn.com/image/coupang/common/logo_coupang_w350.png" alt="coupang" onerror="this.style.display='none'">
+      <div>
+        <h1>쿠팡 반품 판매 DB</h1>
+      </div>
+    </div>
+
+    <div class="version">AUTO</div>
+
+    <p class="desc">
+      30분마다 자동확보 결과를 읽습니다. 상단 전체 확보 개수는 숨기고, 상품 칸에만 확보 등급 수를 표시합니다.
+    </p>
+
+    <div class="actions">
+      <button class="main-btn" onclick="openFirst()">첫 링크 열기</button>
+      <button class="dark-btn" onclick="loadResult()">새로고침</button>
+      <button class="gray-btn" onclick="copyFirst()">첫 링크 복사</button>
+    </div>
+
     <div class="notice" id="updatedAt">최근 확인: -</div>
   </section>
+
   <nav class="filter" id="filters"></nav>
   <div id="sections"></div>
-  <div class="footer">auto-flat-v3<br>GitHub Actions + Cloudflare Pages</div>
+
+  <div class="footer">
+    auto-flat-v5<br>
+    GitHub Actions + Cloudflare Workers
+  </div>
 </main>
+
 <div class="toast" id="toast"></div>
+
 <script>
-const CATALOG=[
-{key:"iphone16pro",category:"iPhone 16",title:"iPhone 16 Pro 반품상품",icon:"📱",rowTitle:"색상",columns:["128GB","256GB","512GB","1TB"],rows:["블랙 티타늄","내추럴 티타늄","데저트 티타늄","화이트 티타늄"]},
-{key:"iphone16promax",category:"iPhone 16",title:"iPhone 16 Pro Max 반품상품",icon:"📱",rowTitle:"색상",columns:["256GB","512GB","1TB"],rows:["블랙 티타늄","내추럴 티타늄","데저트 티타늄","화이트 티타늄"]},
-{key:"iphone17pro",category:"iPhone 17",title:"iPhone 17 Pro 반품상품",icon:"📱",rowTitle:"색상",columns:["256GB","512GB","1TB","2TB"],rows:["실버","코스믹 오렌지","딥 블루"]},
-{key:"iphone17promax",category:"iPhone 17",title:"iPhone 17 Pro Max 반품상품",icon:"📱",rowTitle:"색상",columns:["256GB","512GB","1TB","2TB"],rows:["실버","코스믹 오렌지","딥 블루"]},
-{key:"ipadmini",category:"iPad mini",title:"iPad mini 전체 시리즈",icon:"📲",rowTitle:"모델",columns:["16GB","32GB","64GB","128GB","256GB","512GB"],rows:["iPad mini A17 Pro","iPad mini 6","iPad mini 5","iPad mini 4","iPad mini 3","iPad mini 2","iPad mini 1"]},
-{key:"ipadpro",category:"iPad Pro",title:"iPad Pro M4 / M5 반품상품",icon:"💻",rowTitle:"모델",columns:["256GB","512GB","1TB","2TB"],rows:["iPad Pro 11 M4","iPad Pro 13 M4","iPad Pro 11 M5","iPad Pro 13 M5"]},
-{key:"applewatch",category:"Watch",title:"Apple Watch 최신 반품상품",icon:"⌚",rowTitle:"모델",columns:["40mm","42mm","44mm","46mm","49mm"],rows:["Series 11","SE 3","Ultra 3"]},
-{key:"airpods",category:"AirPods",title:"AirPods 최신 반품상품",icon:"🎧",rowTitle:"모델",columns:["USB-C","ANC","Max"],rows:["AirPods Pro 3","AirPods 4","AirPods Max"]}
+const CATALOG = [
+  {
+    key:"iphone16pro",
+    category:"iPhone 16",
+    title:"iPhone 16 Pro 반품상품",
+    icon:"📱",
+    rowTitle:"색상",
+    columns:["128GB","256GB","512GB","1TB"],
+    rows:["블랙 티타늄","내추럴 티타늄","데저트 티타늄","화이트 티타늄"]
+  },
+  {
+    key:"iphone16promax",
+    category:"iPhone 16",
+    title:"iPhone 16 Pro Max 반품상품",
+    icon:"📱",
+    rowTitle:"색상",
+    columns:["256GB","512GB","1TB"],
+    rows:["블랙 티타늄","내추럴 티타늄","데저트 티타늄","화이트 티타늄"]
+  },
+  {
+    key:"iphone17pro",
+    category:"iPhone 17",
+    title:"iPhone 17 Pro 반품상품",
+    icon:"📱",
+    rowTitle:"색상",
+    columns:["256GB","512GB","1TB","2TB"],
+    rows:["실버","코스믹 오렌지","딥 블루"]
+  },
+  {
+    key:"iphone17promax",
+    category:"iPhone 17",
+    title:"iPhone 17 Pro Max 반품상품",
+    icon:"📱",
+    rowTitle:"색상",
+    columns:["256GB","512GB","1TB","2TB"],
+    rows:["실버","코스믹 오렌지","딥 블루"]
+  },
+  {
+    key:"ipadmini",
+    category:"iPad mini",
+    title:"iPad mini 전체 시리즈",
+    icon:"📲",
+    rowTitle:"모델",
+    columns:["16GB","32GB","64GB","128GB","256GB","512GB"],
+    rows:["iPad mini A17 Pro","iPad mini 6","iPad mini 5","iPad mini 4","iPad mini 3","iPad mini 2","iPad mini 1"]
+  },
+  {
+    key:"ipadpro",
+    category:"iPad Pro",
+    title:"iPad Pro M4 / M5 반품상품",
+    icon:"💻",
+    rowTitle:"모델",
+    columns:["256GB","512GB","1TB","2TB"],
+    rows:["iPad Pro 11 M4","iPad Pro 13 M4","iPad Pro 11 M5","iPad Pro 13 M5"]
+  },
+  {
+    key:"applewatch",
+    category:"Watch",
+    title:"Apple Watch 최신 반품상품",
+    icon:"⌚",
+    rowTitle:"모델",
+    columns:["40mm","42mm","44mm","46mm","49mm"],
+    rows:["Series 11","SE 3","Ultra 3"]
+  },
+  {
+    key:"airpods",
+    category:"AirPods",
+    title:"AirPods 최신 반품상품",
+    icon:"🎧",
+    rowTitle:"모델",
+    columns:["USB-C","ANC","Max"],
+    rows:["AirPods Pro 3","AirPods 4","AirPods Max"]
+  }
 ];
-let RESULT={updatedAt:"",items:[]};
-let selectedCategory="전체";
-async function loadResult(){try{const res=await fetch(`result.json?t=${Date.now()}`,{cache:"no-store"});RESULT=await res.json();render();}catch(e){toast("result.json 로드 실패");render();}}
-function productIndex(){const idx={};for(const p of RESULT.items||[]){if(p.url)idx[`${p.section}__${p.row}__${p.col}`]=p;}return idx}
-function totalSlots(){return CATALOG.reduce((sum,s)=>sum+s.rows.length*s.columns.length,0)}
-function linkedProducts(){return (RESULT.items||[]).filter(p=>p.url)}
-function hitProducts(){return linkedProducts().filter(p=>Number(p.gradeCount||0)>0)}
-function totalGradeCount(){return hitProducts().reduce((sum,p)=>sum+Number(p.gradeCount||0),0)}
-function getCategories(){return ["전체",...Array.from(new Set(CATALOG.map(x=>x.category)))]}
-function renderStats(){statSlot.textContent=`${hitProducts().length}/${totalSlots()}`;statGrade.textContent=`${totalGradeCount()}종`;statLink.textContent=`${linkedProducts().length}개`;updatedAt.textContent=`최근 확인: ${RESULT.updatedAt||"-"}`}
-function renderFilters(){filters.innerHTML=getCategories().map(c=>`<button class="chip ${selectedCategory===c?"active":""}" onclick="selectedCategory='${c}';render()">${c}</button>`).join("")}
-function gridTemplate(s){if(s.columns.length===6)return ".78fr repeat(6,.62fr)";if(s.columns.length===5)return ".82fr repeat(5,.72fr)";if(s.columns.length===3)return ".82fr repeat(3,1fr)";return ".82fr repeat(4,1fr)"}
-function formatRow(t){return t.replace(" 티타늄","<br>티타늄").replace("코스믹 오렌지","코스믹<br>오렌지").replace("딥 블루","딥<br>블루").replace("iPad mini A17 Pro","mini<br>A17").replace("iPad mini ","mini<br>").replace("iPad Pro 11 M4","iPad Pro<br>11 M4").replace("iPad Pro 13 M4","iPad Pro<br>13 M4").replace("iPad Pro 11 M5","iPad Pro<br>11 M5").replace("iPad Pro 13 M5","iPad Pro<br>13 M5").replace("AirPods Pro 3","AirPods<br>Pro 3").replace("AirPods 4","AirPods<br>4").replace("AirPods Max","AirPods<br>Max")}
-function renderSections(){const idx=productIndex();const sections=selectedCategory==="전체"?CATALOG:CATALOG.filter(x=>x.category===selectedCategory);document.getElementById("sections").innerHTML=sections.map(section=>{let html=`<section class="section"><div class="section-title"><span class="emoji">${section.icon}</span><h2>${section.title}</h2></div><div class="table-card"><div class="matrix" style="grid-template-columns:${gridTemplate(section)}"><div class="cell head">${section.rowTitle}</div>${section.columns.map(c=>`<div class="cell head">${c}</div>`).join("")}`;for(const row of section.rows){html+=`<div class="cell row-head">${formatRow(row)}</div>`;for(const col of section.columns){const p=idx[`${section.key}__${row}__${col}`];if(p&&p.url){const n=Number(p.gradeCount||0);html+=`<div class="cell product-cell"><a class="open-btn" href="${p.url}" target="_blank" rel="noopener">열기</a>${n>0?`<span class="meta hot">확보 ${n}종</span>`:""}</div>`;}else{html+=`<div class="cell"><div class="x">×</div></div>`;}}}return html+`</div></div></section>`;}).join("")}
-function openFirst(){const first=hitProducts()[0]||linkedProducts()[0];if(!first)return toast("링크 없음");window.open(first.url,"_blank")}
-async function copyFirst(){const first=hitProducts()[0]||linkedProducts()[0];if(!first)return toast("링크 없음");try{await navigator.clipboard.writeText(first.url);toast("첫 링크 복사 완료")}catch(e){toast("복사 실패")}}
-function sharePage(){const data={title:"쿠팡 반품 판매 DB",text:"쿠팡 반품 판매 DB",url:location.href};if(navigator.share)navigator.share(data).catch(()=>{});else copyFirst()}
-function toast(message){const t=document.getElementById("toast");t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
-function render(){renderStats();renderFilters();renderSections()}
+
+let RESULT = { updatedAt:"", items:[] };
+let selectedCategory = "전체";
+
+async function loadResult() {
+  try {
+    const res = await fetch(`result.json?t=${Date.now()}`, { cache:"no-store" });
+    RESULT = await res.json();
+    render();
+  } catch (error) {
+    toast("result.json 로드 실패");
+    render();
+  }
+}
+
+function productIndex() {
+  const idx = {};
+
+  for (const product of RESULT.items || []) {
+    if (product.url) {
+      idx[`${product.section}__${product.row}__${product.col}`] = product;
+    }
+  }
+
+  return idx;
+}
+
+function linkedProducts() {
+  return (RESULT.items || []).filter(product => product.url);
+}
+
+function hitProducts() {
+  return linkedProducts().filter(product => Number(product.gradeCount || 0) > 0);
+}
+
+function getCategories() {
+  return ["전체", ...Array.from(new Set(CATALOG.map(section => section.category)))];
+}
+
+function renderInfo() {
+  const updated = RESULT.updatedAt || "-";
+  const linkCount = linkedProducts().length || 0;
+  document.getElementById("updatedAt").textContent = `최근 확인: ${updated} · 열기 링크 ${linkCount}개`;
+}
+
+function renderFilters() {
+  document.getElementById("filters").innerHTML = getCategories().map(category => `
+    <button class="chip ${selectedCategory === category ? "active" : ""}" onclick="selectedCategory='${category}';render()">
+      ${category}
+    </button>
+  `).join("");
+}
+
+function gridTemplate(section) {
+  if (section.columns.length === 6) return ".78fr repeat(6,.62fr)";
+  if (section.columns.length === 5) return ".82fr repeat(5,.72fr)";
+  if (section.columns.length === 3) return ".82fr repeat(3,1fr)";
+  return ".82fr repeat(4,1fr)";
+}
+
+function formatRow(text) {
+  return text
+    .replace(" 티타늄","<br>티타늄")
+    .replace("코스믹 오렌지","코스믹<br>오렌지")
+    .replace("딥 블루","딥<br>블루")
+    .replace("iPad mini A17 Pro","mini<br>A17")
+    .replace("iPad mini ","mini<br>")
+    .replace("iPad Pro 11 M4","iPad Pro<br>11 M4")
+    .replace("iPad Pro 13 M4","iPad Pro<br>13 M4")
+    .replace("iPad Pro 11 M5","iPad Pro<br>11 M5")
+    .replace("iPad Pro 13 M5","iPad Pro<br>13 M5")
+    .replace("AirPods Pro 3","AirPods<br>Pro 3")
+    .replace("AirPods 4","AirPods<br>4")
+    .replace("AirPods Max","AirPods<br>Max");
+}
+
+function renderSections() {
+  const idx = productIndex();
+  const sections = selectedCategory === "전체"
+    ? CATALOG
+    : CATALOG.filter(section => section.category === selectedCategory);
+
+  document.getElementById("sections").innerHTML = sections.map(section => {
+    let html = `
+      <section class="section">
+        <div class="section-title">
+          <span class="emoji">${section.icon}</span>
+          <h2>${section.title}</h2>
+        </div>
+
+        <div class="table-card">
+          <div class="matrix" style="grid-template-columns:${gridTemplate(section)}">
+            <div class="cell head">${section.rowTitle}</div>
+            ${section.columns.map(col => `<div class="cell head">${col}</div>`).join("")}
+    `;
+
+    for (const row of section.rows) {
+      html += `<div class="cell row-head">${formatRow(row)}</div>`;
+
+      for (const col of section.columns) {
+        const product = idx[`${section.key}__${row}__${col}`];
+
+        if (product && product.url) {
+          const gradeCount = Number(product.gradeCount || 0);
+
+          html += `
+            <div class="cell product-cell">
+              <a class="open-btn" href="${product.url}" target="_blank" rel="noopener">열기</a>
+              ${gradeCount > 0 ? `<span class="meta hot">확보 ${gradeCount}종</span>` : ""}
+            </div>
+          `;
+        } else {
+          html += `<div class="cell"><div class="x">×</div></div>`;
+        }
+      }
+    }
+
+    html += `
+          </div>
+        </div>
+      </section>
+    `;
+
+    return html;
+  }).join("");
+}
+
+function openFirst() {
+  const first = hitProducts()[0] || linkedProducts()[0];
+
+  if (!first) {
+    toast("링크 없음");
+    return;
+  }
+
+  window.open(first.url, "_blank");
+}
+
+async function copyFirst() {
+  const first = hitProducts()[0] || linkedProducts()[0];
+
+  if (!first) {
+    toast("링크 없음");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(first.url);
+    toast("첫 링크 복사 완료");
+  } catch (error) {
+    toast("복사 실패");
+  }
+}
+
+function sharePage() {
+  const data = {
+    title:"쿠팡 반품 판매 DB",
+    text:"쿠팡 반품 판매 DB",
+    url:location.href
+  };
+
+  if (navigator.share) {
+    navigator.share(data).catch(() => {});
+  } else {
+    copyFirst();
+  }
+}
+
+function toast(message) {
+  const target = document.getElementById("toast");
+  target.textContent = message;
+  target.classList.add("show");
+  setTimeout(() => target.classList.remove("show"), 1500);
+}
+
+function render() {
+  renderInfo();
+  renderFilters();
+  renderSections();
+}
+
 loadResult();
 </script>
 </body>
