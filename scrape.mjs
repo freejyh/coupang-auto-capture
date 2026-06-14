@@ -71,11 +71,10 @@ function detectSoldOut(textLike) {
 
   const patterns = [
     /상품이\s*품절되었습니다/i,
+    /품절되었습니다/i,
     /일시\s*품절/i,
     /일시품절/i,
-    /품절되었습니다/i,
-    /현재\s*상품이\s*품절/i,
-    /현재\s*구매할\s*수\s*없는\s*상품/i,
+    /품절/i,
     /구매할\s*수\s*없는\s*상품/i,
     /판매가\s*종료/i,
     /판매\s*종료/i,
@@ -105,8 +104,38 @@ function parseStatuses(textLike) {
   return STATUS_ORDER.filter(status => found.has(status));
 }
 
-async function fallbackFetch(url) {
-  const res = await fetch(url, {
+async function readWithBrowser(context, product) {
+  const page = await context.newPage();
+
+  try {
+    await page.goto(product.url, {
+      waitUntil: "domcontentloaded",
+      timeout: 45000
+    });
+
+    await page.waitForTimeout(6000);
+
+    const visibleText = await page.locator("body").innerText({
+      timeout: 10000
+    }).catch(() => "");
+
+    const html = await page.content().catch(() => "");
+
+    return {
+      ok: true,
+      method: "playwright",
+      statusCode: 200,
+      finalUrl: page.url(),
+      visibleText,
+      html
+    };
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
+async function readWithFetch(product) {
+  const res = await fetch(product.url, {
     redirect: "follow",
     headers: {
       "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
@@ -121,8 +150,8 @@ async function fallbackFetch(url) {
   const html = await res.text();
 
   return {
-    method: "fetch",
     ok: res.ok,
+    method: "fetch",
     statusCode: res.status,
     finalUrl: res.url,
     visibleText: stripHtml(html),
@@ -130,58 +159,16 @@ async function fallbackFetch(url) {
   };
 }
 
-async function readRenderedPage(context, url) {
-  const page = await context.newPage();
-
-  try {
-    await page.goto(url, {
-      waitUntil: "domcontentloaded",
-      timeout: 45000
-    });
-
-    await page.waitForTimeout(5000);
-
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight / 2);
-    }).catch(() => {});
-
-    await page.waitForTimeout(1500);
-
-    const visibleText = await page.locator("body").innerText({
-      timeout: 8000
-    }).catch(() => "");
-
-    const html = await page.content().catch(() => "");
-
-    return {
-      method: "playwright",
-      ok: true,
-      statusCode: 200,
-      finalUrl: page.url(),
-      visibleText,
-      html
-    };
-  } finally {
-    await page.close().catch(() => {});
-  }
-}
-
-function buildItem(product, page) {
-  const visibleText = page.visibleText || "";
-  const htmlText = stripHtml(page.html || "");
+function buildItem(product, pageData) {
+  const visibleText = pageData.visibleText || "";
+  const htmlText = stripHtml(pageData.html || "");
   const combined = `${visibleText} ${htmlText}`;
 
-  const soldOut =
-    detectSoldOut(visibleText) ||
-    detectSoldOut(combined);
+  const soldOut = detectSoldOut(combined);
 
   let statuses = [];
 
-  if (!page.ok) {
-    statuses = [];
-  } else if (soldOut) {
-    statuses = [];
-  } else {
+  if (pageData.ok && !soldOut) {
     statuses = parseStatuses(visibleText);
 
     if (!statuses.length && !visibleText.trim()) {
@@ -192,12 +179,12 @@ function buildItem(product, page) {
   return {
     ...product,
     checkedAt: nowKST(),
-    method: page.method,
-    status: page.ok ? (soldOut ? "SOLD_OUT" : "OK") : `HTTP_${page.statusCode}`,
+    method: pageData.method,
+    status: pageData.ok ? (soldOut ? "SOLD_OUT" : "OK") : `HTTP_${pageData.statusCode}`,
     soldOut,
-    finalUrl: page.finalUrl,
-    gradeCount: statuses.length,
-    statuses
+    finalUrl: pageData.finalUrl,
+    gradeCount: soldOut ? 0 : statuses.length,
+    statuses: soldOut ? [] : statuses
   };
 }
 
@@ -296,35 +283,32 @@ async function main() {
   const oldResult = await readJson(RESULT_PATH, { items: [] });
   const items = [];
 
-  let browser;
-  let context;
+  const browser = await chromium.launch({
+    headless: true
+  });
+
+  const context = await browser.newContext({
+    ...devices["iPhone 13"],
+    locale: "ko-KR",
+    timezoneId: "Asia/Seoul",
+    extraHTTPHeaders: {
+      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5",
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache",
+      "Referer": "https://www.coupang.com/"
+    }
+  });
 
   try {
-    browser = await chromium.launch({
-      headless: true
-    });
-
-    context = await browser.newContext({
-      ...devices["iPhone 13"],
-      locale: "ko-KR",
-      timezoneId: "Asia/Seoul",
-      extraHTTPHeaders: {
-        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "Referer": "https://www.coupang.com/"
-      }
-    });
-
     for (const product of products) {
       try {
         let pageData;
 
         try {
-          pageData = await readRenderedPage(context, product.url);
-        } catch (renderError) {
-          console.log(`${product.name}: PLAYWRIGHT_ERROR -> fallback fetch`);
-          pageData = await fallbackFetch(product.url);
+          pageData = await readWithBrowser(context, product);
+        } catch (browserError) {
+          console.log(`${product.name}: browser failed, fallback fetch`);
+          pageData = await readWithFetch(product);
         }
 
         const item = buildItem(product, pageData);
@@ -336,7 +320,7 @@ async function main() {
           console.log(`${product.name}: ${item.gradeCount}종 ${(item.statuses || []).join(", ") || "-"}`);
         }
 
-        await sleep(1800);
+        await sleep(1500);
       } catch (error) {
         items.push({
           ...product,
@@ -353,12 +337,12 @@ async function main() {
       }
     }
   } finally {
-    if (context) await context.close().catch(() => {});
-    if (browser) await browser.close().catch(() => {});
+    await context.close().catch(() => {});
+    await browser.close().catch(() => {});
   }
 
   const result = {
-    version: "auto-flat-v7-playwright",
+    version: "auto-final-v8",
     updatedAt: nowKST(),
     items
   };
