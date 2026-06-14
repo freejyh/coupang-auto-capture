@@ -17,7 +17,10 @@
       --shadow:0 12px 28px rgba(0,0,0,.07);
     }
 
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
 
     html,body{
       margin:0;
@@ -29,8 +32,14 @@
       text-rendering:geometricPrecision;
     }
 
-    a,button{font-family:inherit}
-    a{text-decoration:none;color:inherit}
+    a,button{
+      font-family:inherit;
+    }
+
+    a{
+      text-decoration:none;
+      color:inherit;
+    }
 
     .app{
       width:100%;
@@ -135,9 +144,17 @@
       align-items:center;
     }
 
-    .main-btn{background:var(--orange)}
-    .dark-btn{background:#080808}
-    .gray-btn{background:#3c3c3c}
+    .main-btn{
+      background:var(--orange);
+    }
+
+    .dark-btn{
+      background:#080808;
+    }
+
+    .gray-btn{
+      background:#3c3c3c;
+    }
 
     .notice{
       margin:10px 2px 0;
@@ -158,7 +175,9 @@
       padding:0 2px 2px;
     }
 
-    .filter::-webkit-scrollbar{display:none}
+    .filter::-webkit-scrollbar{
+      display:none;
+    }
 
     .chip{
       flex:0 0 auto;
@@ -319,13 +338,36 @@
     }
 
     @media(max-width:380px){
-      .app{padding-left:12px;padding-right:12px}
-      h1{font-size:20px}
-      .section-title h2{font-size:18.8px}
-      .head{font-size:10.8px}
-      .row-head{font-size:10.1px}
-      .open-btn{min-width:43px;height:27px;font-size:10.5px}
-      .meta{font-size:9.8px}
+      .app{
+        padding-left:12px;
+        padding-right:12px;
+      }
+
+      h1{
+        font-size:20px;
+      }
+
+      .section-title h2{
+        font-size:18.8px;
+      }
+
+      .head{
+        font-size:10.8px;
+      }
+
+      .row-head{
+        font-size:10.1px;
+      }
+
+      .open-btn{
+        min-width:43px;
+        height:27px;
+        font-size:10.5px;
+      }
+
+      .meta{
+        font-size:9.8px;
+      }
     }
   </style>
 </head>
@@ -348,7 +390,7 @@
     <div class="version">AUTO</div>
 
     <p class="desc">
-      30분마다 자동확보 결과를 읽습니다. 상단 전체 확보 개수는 숨기고, 상품 칸에만 확보 등급 수를 표시합니다.
+      30분마다 자동확보 결과를 읽습니다. 확보된 상품만 열기 버튼과 확보 등급 수를 표시합니다.
     </p>
 
     <div class="actions">
@@ -364,7 +406,7 @@
   <div id="sections"></div>
 
   <div class="footer">
-    auto-flat-v5<br>
+    auto-flat-v6<br>
     GitHub Actions + Cloudflare Workers
   </div>
 </main>
@@ -447,12 +489,19 @@ const CATALOG = [
   }
 ];
 
-let RESULT = { updatedAt:"", items:[] };
+let RESULT = {
+  updatedAt:"",
+  items:[]
+};
+
 let selectedCategory = "전체";
 
 async function loadResult() {
   try {
-    const res = await fetch(`result.json?t=${Date.now()}`, { cache:"no-store" });
+    const res = await fetch(`result.json?t=${Date.now()}`, {
+      cache:"no-store"
+    });
+
     RESULT = await res.json();
     render();
   } catch (error) {
@@ -482,13 +531,18 @@ function hitProducts() {
 }
 
 function getCategories() {
-  return ["전체", ...Array.from(new Set(CATALOG.map(section => section.category)))];
+  return [
+    "전체",
+    ...Array.from(new Set(CATALOG.map(section => section.category)))
+  ];
 }
 
 function renderInfo() {
   const updated = RESULT.updatedAt || "-";
-  const linkCount = linkedProducts().length || 0;
-  document.getElementById("updatedAt").textContent = `최근 확인: ${updated} · 열기 링크 ${linkCount}개`;
+  const hitCount = hitProducts().length || 0;
+
+  document.getElementById("updatedAt").textContent =
+    `최근 확인: ${updated} · 확보 상품 ${hitCount}개`;
 }
 
 function renderFilters() {
@@ -524,6 +578,7 @@ function formatRow(text) {
 
 function renderSections() {
   const idx = productIndex();
+
   const sections = selectedCategory === "전체"
     ? CATALOG
     : CATALOG.filter(section => section.category === selectedCategory);
@@ -551,12 +606,16 @@ function renderSections() {
         if (product && product.url) {
           const gradeCount = Number(product.gradeCount || 0);
 
-          html += `
-            <div class="cell product-cell">
-              <a class="open-btn" href="${product.url}" target="_blank" rel="noopener">열기</a>
-              ${gradeCount > 0 ? `<span class="meta hot">확보 ${gradeCount}종</span>` : ""}
-            </div>
-          `;
+          if (gradeCount > 0) {
+            html += `
+              <div class="cell product-cell">
+                <a class="open-btn" href="${product.url}" target="_blank" rel="noopener">열기</a>
+                <span class="meta hot">확보 ${gradeCount}종</span>
+              </div>
+            `;
+          } else {
+            html += `<div class="cell"><div class="x">×</div></div>`;
+          }
         } else {
           html += `<div class="cell"><div class="x">×</div></div>`;
         }
@@ -574,10 +633,10 @@ function renderSections() {
 }
 
 function openFirst() {
-  const first = hitProducts()[0] || linkedProducts()[0];
+  const first = hitProducts()[0];
 
   if (!first) {
-    toast("링크 없음");
+    toast("확보 상품 없음");
     return;
   }
 
@@ -585,16 +644,16 @@ function openFirst() {
 }
 
 async function copyFirst() {
-  const first = hitProducts()[0] || linkedProducts()[0];
+  const first = hitProducts()[0];
 
   if (!first) {
-    toast("링크 없음");
+    toast("확보 상품 없음");
     return;
   }
 
   try {
     await navigator.clipboard.writeText(first.url);
-    toast("첫 링크 복사 완료");
+    toast("첫 확보 링크 복사 완료");
   } catch (error) {
     toast("복사 실패");
   }
@@ -618,7 +677,10 @@ function toast(message) {
   const target = document.getElementById("toast");
   target.textContent = message;
   target.classList.add("show");
-  setTimeout(() => target.classList.remove("show"), 1500);
+
+  setTimeout(() => {
+    target.classList.remove("show");
+  }, 1500);
 }
 
 function render() {
