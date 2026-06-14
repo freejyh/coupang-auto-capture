@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { chromium, devices } from "playwright";
 
 const PRODUCTS_PATH = "products.json";
 const RESULT_PATH = "result.json";
@@ -45,7 +46,7 @@ function decodeHtml(value) {
     .replace(/&gt;/gi, ">");
 }
 
-function htmlToText(html) {
+function stripHtml(html) {
   return decodeHtml(html)
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -65,13 +66,11 @@ function normalizeText(value) {
     .trim();
 }
 
-function detectSoldOut(html) {
-  const raw = normalizeText(decodeHtml(html));
-  const text = normalizeText(htmlToText(html));
+function detectSoldOut(textLike) {
+  const text = normalizeText(decodeHtml(textLike));
 
-  const combined = `${raw} ${text}`;
-
-  const strongSoldOutPatterns = [
+  const patterns = [
+    /상품이\s*품절되었습니다/i,
     /일시\s*품절/i,
     /일시품절/i,
     /품절되었습니다/i,
@@ -85,15 +84,15 @@ function detectSoldOut(html) {
     /out\s*of\s*stock/i,
     /sold\s*out/i,
     /soldout/i,
-    /outOfStock/i,
-    /SOLD_OUT/i
+    /SOLD_OUT/i,
+    /outOfStock/i
   ];
 
-  return strongSoldOutPatterns.some(pattern => pattern.test(combined));
+  return patterns.some(pattern => pattern.test(text));
 }
 
-function parseStatuses(html) {
-  const text = normalizeText(htmlToText(html));
+function parseStatuses(textLike) {
+  const text = normalizeText(decodeHtml(textLike));
   const found = new Set();
 
   const re = /반품\s*[-–—·ㆍ•∙]?\s*(최상|중상|중하|상|중|하)(?!\s*품|고)/g;
@@ -106,7 +105,7 @@ function parseStatuses(html) {
   return STATUS_ORDER.filter(status => found.has(status));
 }
 
-async function fetchPage(url) {
+async function fallbackFetch(url) {
   const res = await fetch(url, {
     redirect: "follow",
     headers: {
@@ -122,10 +121,83 @@ async function fetchPage(url) {
   const html = await res.text();
 
   return {
+    method: "fetch",
     ok: res.ok,
     statusCode: res.status,
     finalUrl: res.url,
+    visibleText: stripHtml(html),
     html
+  };
+}
+
+async function readRenderedPage(context, url) {
+  const page = await context.newPage();
+
+  try {
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: 45000
+    });
+
+    await page.waitForTimeout(5000);
+
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight / 2);
+    }).catch(() => {});
+
+    await page.waitForTimeout(1500);
+
+    const visibleText = await page.locator("body").innerText({
+      timeout: 8000
+    }).catch(() => "");
+
+    const html = await page.content().catch(() => "");
+
+    return {
+      method: "playwright",
+      ok: true,
+      statusCode: 200,
+      finalUrl: page.url(),
+      visibleText,
+      html
+    };
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
+function buildItem(product, page) {
+  const visibleText = page.visibleText || "";
+  const htmlText = stripHtml(page.html || "");
+  const combined = `${visibleText} ${htmlText}`;
+
+  const soldOut =
+    detectSoldOut(visibleText) ||
+    detectSoldOut(combined);
+
+  let statuses = [];
+
+  if (!page.ok) {
+    statuses = [];
+  } else if (soldOut) {
+    statuses = [];
+  } else {
+    statuses = parseStatuses(visibleText);
+
+    if (!statuses.length && !visibleText.trim()) {
+      statuses = parseStatuses(htmlText);
+    }
+  }
+
+  return {
+    ...product,
+    checkedAt: nowKST(),
+    method: page.method,
+    status: page.ok ? (soldOut ? "SOLD_OUT" : "OK") : `HTTP_${page.statusCode}`,
+    soldOut,
+    finalUrl: page.finalUrl,
+    gradeCount: statuses.length,
+    statuses
   };
 }
 
@@ -172,7 +244,7 @@ function makeManualTestMessage(items) {
 
   const lines = [
     "쿠팡 반품 자동확보 테스트",
-    "변화 없음",
+    "수동 실행 완료",
     `확보 상품: ${hits.length}개`,
     `등급 합계: ${totalGrade}종`,
     `품절 감지: ${soldOuts.length}개`,
@@ -222,58 +294,71 @@ async function sendTelegram(text) {
 async function main() {
   const products = await readJson(PRODUCTS_PATH, []);
   const oldResult = await readJson(RESULT_PATH, { items: [] });
-
   const items = [];
 
-  for (const product of products) {
-    try {
-      const page = await fetchPage(product.url);
+  let browser;
+  let context;
 
-      let soldOut = false;
-      let statuses = [];
+  try {
+    browser = await chromium.launch({
+      headless: true
+    });
 
-      if (page.ok) {
-        soldOut = detectSoldOut(page.html);
-
-        if (soldOut) {
-          statuses = [];
-        } else {
-          statuses = parseStatuses(page.html);
-        }
+    context = await browser.newContext({
+      ...devices["iPhone 13"],
+      locale: "ko-KR",
+      timezoneId: "Asia/Seoul",
+      extraHTTPHeaders: {
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Referer": "https://www.coupang.com/"
       }
+    });
 
-      items.push({
-        ...product,
-        checkedAt: nowKST(),
-        status: page.ok ? (soldOut ? "SOLD_OUT" : "OK") : `HTTP_${page.statusCode}`,
-        soldOut,
-        finalUrl: page.finalUrl,
-        gradeCount: statuses.length,
-        statuses
-      });
+    for (const product of products) {
+      try {
+        let pageData;
 
-      console.log(
-        `${product.name}: ${soldOut ? "SOLD_OUT" : `${statuses.length}종 ${statuses.join(", ") || "-"}`}`
-      );
+        try {
+          pageData = await readRenderedPage(context, product.url);
+        } catch (renderError) {
+          console.log(`${product.name}: PLAYWRIGHT_ERROR -> fallback fetch`);
+          pageData = await fallbackFetch(product.url);
+        }
 
-      await sleep(2800);
-    } catch (error) {
-      items.push({
-        ...product,
-        checkedAt: nowKST(),
-        status: "FETCH_ERROR",
-        soldOut: false,
-        error: String(error?.message || error),
-        gradeCount: 0,
-        statuses: []
-      });
+        const item = buildItem(product, pageData);
+        items.push(item);
 
-      console.log(`${product.name}: FETCH_ERROR`);
+        if (item.soldOut) {
+          console.log(`${product.name}: SOLD_OUT`);
+        } else {
+          console.log(`${product.name}: ${item.gradeCount}종 ${(item.statuses || []).join(", ") || "-"}`);
+        }
+
+        await sleep(1800);
+      } catch (error) {
+        items.push({
+          ...product,
+          checkedAt: nowKST(),
+          method: "error",
+          status: "FETCH_ERROR",
+          soldOut: false,
+          error: String(error?.message || error),
+          gradeCount: 0,
+          statuses: []
+        });
+
+        console.log(`${product.name}: FETCH_ERROR`);
+      }
     }
+  } finally {
+    if (context) await context.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
   }
 
   const result = {
-    version: "auto-flat-v6",
+    version: "auto-flat-v7-playwright",
     updatedAt: nowKST(),
     items
   };
